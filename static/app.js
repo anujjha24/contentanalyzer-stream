@@ -4,7 +4,7 @@
 // The bridge URL is injected by the Streamlit host via window.STREAMLIT_API_BASE.
 // Fallback: calls go to /api/... which Streamlit serves via its component server.
 
-const API = (window.STREAMLIT_API_BASE || '').replace(/\/$/, '');
+const API = "http://127.0.0.1:8502";
 let currentView = 'dashboard';
 let globalChannel = '';
 let globalDate = '';

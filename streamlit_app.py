@@ -443,10 +443,11 @@ def _start_api_server():
 
     def _run():
         uvicorn.run(api, host="0.0.0.0", port=API_PORT, log_level="warning")
-
-    t = threading.Thread(target=_run, daemon=True)
-    t.start()
-    logger.info("FastAPI backend started on port %d", API_PORT)
+    if "api_started" not in st.session_state:
+        t = threading.Thread(target=_run, daemon=True)
+        t.start()
+        st.session_state.api_started = True
+        logger.info("FastAPI backend started on port %d", API_PORT)
 
 
 # ── HTML preparation ──────────────────────────────────────────────────────────

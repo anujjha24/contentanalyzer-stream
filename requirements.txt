@@ -5,7 +5,8 @@ uvicorn[standard]>=0.29.0
 python-multipart>=0.0.9      # FastAPI file upload support
 
 # ── MongoDB ───────────────────────────────────────────────────────────────────
-pymongo[srv]>=4.7.0
+pymongo
+dnspython
 
 # ── Excel / data processing ───────────────────────────────────────────────────
 pandas>=2.2.0
