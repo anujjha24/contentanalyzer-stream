@@ -1,2 +1,7 @@
-MONGO_URI="mongodb+srv://anujjha802_db_user:Anujjha2427@contentanalyzer.cp7wukp.mongodb.net/?appName=ContentAnalyzer"
-DB_NAME="content_analyzer"
+[server]
+headless = true
+enableCORS = false
+enableXsrfProtection = false
+
+[browser]
+gatherUsageStats = false

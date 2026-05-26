@@ -5,6 +5,7 @@ MongoDB connection management and index setup.
 import os
 import logging
 from functools import lru_cache
+import streamlit as st
 
 from pymongo import ASCENDING, MongoClient
 from pymongo.errors import InvalidURI
@@ -19,7 +20,7 @@ _indexes_ready = False
 def get_mongo_client() -> MongoClient:
     global _mongo_client
     if _mongo_client is None:
-        uri = os.getenv("MONGO_URI")
+        uri = st.secrets["MONGO_URI"]
         if not uri:
             raise RuntimeError("MONGO_URI environment variable is required")
         try:
@@ -44,7 +45,7 @@ def get_mongo_client() -> MongoClient:
 def get_database():
     global _mongo_db
     if _mongo_db is None:
-        db_name = os.getenv("DB_NAME") or os.getenv("MONGO_DB_NAME", "content_analyzer")
+        db_name = st.secrets.get("DB_NAME", "content_analyzer")
         _mongo_db = get_mongo_client()[db_name]
     return _mongo_db
 
