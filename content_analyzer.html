@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Content Analyzer</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0b0f1a;
+      --surface: #111827;
+      --surface2: #1a2234;
+      --surface3: #1f2d42;
+      --border: rgba(99, 179, 237, 0.15);
+      --border-strong: rgba(99, 179, 237, 0.35);
+      --accent: #3b82f6;
+      --accent2: #06b6d4;
+      --accent3: #8b5cf6;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --muted2: #94a3b8;
+      --success: #10b981;
+      --warn: #f59e0b;
+      --error: #ef4444;
+      --font-display: 'Rajdhani', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 14px;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Top glow */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 400px;
+      background: radial-gradient(ellipse, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 24px 60px;
+    }
+
+    /* ── HEADER ── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 32px 0 36px;
+      border-bottom: 0.5px solid var(--border);
+      margin-bottom: 36px;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .logo-icon svg {
+      width: 26px;
+      height: 26px;
+      color: #fff;
+    }
+
+    .logo-text {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      background: linear-gradient(120deg, #93c5fd, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .logo-sub {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .header-right {
+      margin-left: auto;
+      text-align: right;
+    }
+
+    .version-badge {
+      display: inline-block;
+      background: rgba(59, 130, 246, 0.1);
+      border: 0.5px solid rgba(59, 130, 246, 0.3);
+      color: #60a5fa;
+      font-size: 11px;
+      letter-spacing: 1px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-family: var(--font-display);
+      font-weight: 600;
+    }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 0.5px;
+      background: var(--border);
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      color: #93c5fd;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── UPLOAD ZONE ── */
+    .upload-zone {
+      border: 1.5px dashed var(--border-strong);
+      border-radius: 12px;
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: rgba(59, 130, 246, 0.03);
+      position: relative;
+    }
+
+    .upload-zone:hover,
+    .upload-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(59, 130, 246, 0.07);
+    }
+
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .upload-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 12px;
+      background: rgba(59, 130, 246, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+    }
+
+    .upload-title {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .upload-hint {
+      color: var(--muted2);
+      font-size: 12px;
+    }
+
+    .upload-ext {
+      color: var(--accent2);
+      font-size: 11px;
+      margin-top: 6px;
+      font-family: monospace;
+    }
+
+    /* ── FILE LIST ── */
+    .file-list {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface2);
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      animation: slideIn 0.2s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .file-icon {
+      width: 32px;
+      height: 32px;
+      background: rgba(16, 185, 129, 0.1);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--success);
+      flex-shrink: 0;
+    }
+
+    .file-name {
+      font-size: 13px;
+      font-weight: 500;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-size {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .file-remove {
+      width: 24px;
+      height: 24px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .file-remove:hover {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error);
+    }
+
+    /* ── META INPUTS ── */
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .field input,
+    .field select {
+      background: var(--surface2);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--accent);
+    }
+
+    .field input::placeholder {
+      color: var(--muted);
+    }
+
+    .field select option {
+      background: var(--surface);
+    }
+
+    /* Date input calendar icon color */
+    .field input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.5);
+      cursor: pointer;
+    }
+
+    /* ── BULK LIST TABLE ── */
+    .bulk-table-wrap {
+      overflow-x: auto;
+    }
+
+    .bulk-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .bulk-table th {
+      text-align: left;
+      padding: 8px 12px;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      border-bottom: 0.5px solid var(--border);
+      font-weight: 500;
+    }
+
+    .bulk-table td {
+      padding: 10px 12px;
+      border-bottom: 0.5px solid rgba(99, 179, 237, 0.06);
+      vertical-align: middle;
+    }
+
+    .bulk-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .bulk-table tr:hover td {
+      background: rgba(59, 130, 246, 0.03);
+    }
+
+    .bulk-table input[type="text"],
+    .bulk-table input[type="date"] {
+      background: var(--surface3);
+      border: 0.5px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 12px;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.2s;
+    }
+
+    .bulk-table input:focus {
+      border-color: var(--accent);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-dot.pending {
+      background: var(--muted);
+    }
+
+    .status-dot.ready {
+      background: var(--success);
+    }
+
+    .status-dot.error {
+      background: var(--error);
+    }
+
+    /* ── TOGGLE ── */
+    .mode-toggle {
+      display: flex;
+      background: var(--surface2);
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      padding: 3px;
+      margin-bottom: 20px;
+      width: fit-content;
+    }
+
+    .mode-btn {
+      padding: 7px 20px;
+      border-radius: 7px;
+      border: none;
+      background: none;
+      color: var(--muted2);
+      cursor: pointer;
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .mode-btn.active {
+      background: var(--surface3);
+      color: var(--text);
+      border: 0.5px solid var(--border-strong);
+    }
+
+    /* ── RUN BUTTON ── */
+    .run-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .run-btn:hover:not(:disabled) {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .run-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .run-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* ── LOG PANEL ── */
+    .log-panel {
+      background: #070c14;
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      max-height: 260px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .log-panel.visible {
+      display: block;
+    }
+
+    .log-line {
+      display: flex;
+      gap: 10px;
+    }
+
+    .log-time {
+      color: #4a5568;
+      flex-shrink: 0;
+    }
+
+    .log-msg.info {
+      color: #60a5fa;
+    }
+
+    .log-msg.ok {
+      color: #10b981;
+    }
+
+    .log-msg.warn {
+      color: #f59e0b;
+    }
+
+    .log-msg.error {
+      color: #ef4444;
+    }
+
+    .log-msg.dim {
+      color: #4a5568;
+    }
+
+    /* ── OUTPUT CARD ── */
+    .output-card {
+      display: none;
+      background: var(--surface);
+      border: 0.5px solid rgba(16, 185, 129, 0.3);
+      border-radius: 16px;
+      padding: 24px;
+      margin-top: 20px;
+      animation: fadeUp 0.3s ease;
+    }
+
+    .output-card.visible {
+      display: block;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .output-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .output-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(16, 185, 129, 0.15);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--success);
+    }
+
+    .output-title {
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .output-sub {
+      font-size: 12px;
+      color: var(--muted2);
+    }
+
+    .download-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .download-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface2);
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+    }
+
+    .dl-name {
+      flex: 1;
+      font-size: 13px;
+      font-family: monospace;
+      color: #93c5fd;
+    }
+
+    .dl-size {
+      font-size: 11px;
+      color: var(--muted);
+      margin-right: 8px;
+    }
+
+    .dl-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 0.5px solid rgba(59, 130, 246, 0.3);
+      color: #60a5fa;
+      border-radius: 7px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+
+    .dl-btn:hover {
+      background: rgba(59, 130, 246, 0.2);
+    }
+
+    /* ── PROGRESS BAR ── */
+    .progress-wrap {
+      margin: 16px 0;
+      display: none;
+    }
+
+    .progress-wrap.visible {
+      display: block;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted2);
+      margin-bottom: 6px;
+    }
+
+    .progress-bar {
+      height: 4px;
+      background: var(--surface2);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 4px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .stat-card {
+      background: var(--surface2);
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .stat-num {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent2);
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 2px;
+    }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-strong);
+      border-radius: 3px;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .meta-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-row {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <!-- HEADER -->
+    <header>
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path
+            d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18" />
+          <circle cx="12" cy="12" r="2" fill="currentColor" />
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">CONTENT ANALYZER</div>
+        <div class="logo-sub">BARC × NCT Comparison Engine</div>
+      </div>
+      <div class="header-right">
+        <span class="version-badge">v3.0</span>
+      </div>
+    </header>
+
+    <!-- MODE TOGGLE -->
+    <div class="section-label">Processing Mode</div>
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="btn-single" onclick="setMode('single')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+        </svg>
+        Single File
+      </button>
+      <button class="mode-btn" id="btn-bulk" onclick="setMode('bulk')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="7" width="20" height="14" rx="2" />
+          <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+          <line x1="12" y1="12" x2="12" y2="16" />
+          <line x1="10" y1="14" x2="14" y2="14" />
+        </svg>
+        Bulk Upload
+      </button>
+    </div>
+
+    <!-- SINGLE MODE -->
+    <div id="panel-single">
+      <!-- Upload -->
+      <div class="section-label">Input File</div>
+      <div class="card">
+        <div class="upload-zone" id="drop-single" ondragover="onDragOver(event,'drop-single')"
+          ondragleave="onDragLeave('drop-single')" ondrop="onDrop(event,'single')">
+          <input type="file" accept=".xlsx,.xls" id="file-single" onchange="onFileSelect(event,'single')" />
+          <div class="upload-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="16 16 12 12 8 16" />
+              <line x1="12" y1="12" x2="12" y2="21" />
+              <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+            </svg>
+          </div>
+          <div class="upload-title">Drop your Excel file here</div>
+          <div class="upload-hint">or click to browse</div>
+          <div class="upload-ext">.xlsx &nbsp;/&nbsp; .xls &nbsp;— brand_comparison_template</div>
+        </div>
+        <div class="file-list" id="file-list-single"></div>
+      </div>
+
+      <!-- Metadata section removed as backend handles naming automatically -->
+    </div>
+
+    <!-- BULK MODE -->
+    <div id="panel-bulk" style="display:none">
+      <div class="section-label">Bulk Upload</div>
+      <div class="card">
+        <div class="upload-zone" id="drop-bulk" ondragover="onDragOver(event,'drop-bulk')"
+          ondragleave="onDragLeave('drop-bulk')" ondrop="onDrop(event,'bulk')">
+          <input type="file" accept=".xlsx,.xls" multiple id="file-bulk" onchange="onFileSelect(event,'bulk')" />
+          <div class="upload-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2" />
+              <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+              <line x1="12" y1="12" x2="12" y2="16" />
+              <line x1="10" y1="14" x2="14" y2="14" />
+            </svg>
+          </div>
+          <div class="upload-title">Drop multiple Excel files here</div>
+          <div class="upload-hint">Each file = one channel/date combination</div>
+          <div class="upload-ext">.xlsx &nbsp;/&nbsp; .xls — multiple files accepted</div>
+        </div>
+      </div>
+
+      <div class="card" id="bulk-table-card" style="display:none">
+        <div class="card-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="8" y1="6" x2="21" y2="6" />
+            <line x1="8" y1="12" x2="21" y2="12" />
+            <line x1="8" y1="18" x2="21" y2="18" />
+            <line x1="3" y1="6" x2="3.01" y2="6" />
+            <line x1="3" y1="12" x2="3.01" y2="12" />
+            <line x1="3" y1="18" x2="3.01" y2="18" />
+          </svg>
+          File Queue
+        </div>
+        <div class="bulk-table-wrap">
+          <table class="bulk-table">
+            <thead>
+              <tr>
+                <th style="width:30px">#</th>
+                <th>Filename</th>
+                <th style="width:70px; text-align:center">Status</th>
+                <th style="width:30px"></th>
+              </tr>
+            </thead>
+            <tbody id="bulk-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="section-label">Comparison Settings</div>
+    <div class="card">
+      <div class="meta-grid">
+        <div class="field">
+          <label>Similarity Threshold</label>
+          <input type="number" id="threshold" value="0.80" min="0" max="1" step="0.01" placeholder="0.80" />
+        </div>
+        <div class="field">
+          <label>Time Tolerance (seconds)</label>
+          <input type="number" id="tolerance" value="1" min="0" max="60" step="1" placeholder="1" />
+        </div>
+      </div>
+      <div style="margin-top: 10px; font-size: 11px; color: var(--muted); line-height: 1.8;">
+        These values are passed directly to the Python comparison engine — no logic is modified.
+      </div>
+    </div>
+
+    <!-- PROGRESS & LOG -->
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-label">
+        <span id="progress-text">Processing...</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <div class="log-panel" id="log-panel"></div>
+
+    <!-- RUN -->
+    <button class="run-btn" id="run-btn" onclick="runAnalysis()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polygon points="5 3 19 12 5 21 5 3" />
+      </svg>
+      RUN ANALYSIS
+    </button>
+
+    <!-- OUTPUT -->
+    <div class="output-card" id="output-card">
+      <div class="output-header">
+        <div class="output-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+        <div>
+          <div class="output-title">Analysis Complete</div>
+          <div class="output-sub" id="output-sub">Ready for download</div>
+        </div>
+      </div>
+
+      <div class="stats-row" id="stats-row" style="margin-bottom: 20px;"></div>
+
+      <div class="section-label" style="margin-bottom: 12px;">Output Files</div>
+      <div class="download-list" id="download-list"></div>
+    </div>
+
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <script>
+    // ── State ─────────────────────────────────────────────────────────────────────
+    let mode = 'single';
+    let singleFile = null;
+    let bulkFiles = [];  // [{file}]
+
+    function setMode(m) {
+      mode = m;
+      document.getElementById('panel-single').style.display = m === 'single' ? '' : 'none';
+      document.getElementById('panel-bulk').style.display = m === 'bulk' ? '' : 'none';
+      document.getElementById('btn-single').classList.toggle('active', m === 'single');
+      document.getElementById('btn-bulk').classList.toggle('active', m === 'bulk');
+    }
+
+    // ── Drag / Drop helpers ───────────────────────────────────────────────────────
+    function onDragOver(e, id) { e.preventDefault(); document.getElementById(id).classList.add('drag-over'); }
+    function onDragLeave(id) { document.getElementById(id).classList.remove('drag-over'); }
+
+    function onDrop(e, target) {
+      e.preventDefault();
+      const id = target === 'single' ? 'drop-single' : 'drop-bulk';
+      document.getElementById(id).classList.remove('drag-over');
+      const files = [...e.dataTransfer.files].filter(f => /\.(xlsx|xls)$/i.test(f.name));
+      if (!files.length) return;
+      if (target === 'single') addSingle(files[0]);
+      else files.forEach(addBulkFile);
+    }
+
+    function onFileSelect(e, target) {
+      const files = [...e.target.files];
+      if (target === 'single') { if (files[0]) addSingle(files[0]); }
+      else files.forEach(addBulkFile);
+      e.target.value = '';
+    }
+
+    // ── Single file ───────────────────────────────────────────────────────────────
+    function addSingle(file) {
+      singleFile = file;
+      const list = document.getElementById('file-list-single');
+      list.innerHTML = '';
+      list.appendChild(makeFileItem(file, () => { singleFile = null; list.innerHTML = ''; }));
+    }
+
+    function makeFileItem(file, onRemove) {
+      const div = document.createElement('div');
+      div.className = 'file-item';
+      div.innerHTML = `
+    <div class="file-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </div>
+    <span class="file-name">${file.name}</span>
+    <span class="file-size">${fmtSize(file.size)}</span>
+    <button class="file-remove" title="Remove">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>`;
+      div.querySelector('.file-remove').onclick = onRemove;
+      return div;
+    }
+
+    function fmtSize(b) {
+      if (b < 1024) return b + ' B';
+      if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+      return (b / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    // ── Bulk files ────────────────────────────────────────────────────────────────
+    function addBulkFile(file) {
+      const entry = { file, channel: '', date: '' };
+      bulkFiles.push(entry);
+      renderBulkTable();
+    }
+
+    function renderBulkTable() {
+      const card = document.getElementById('bulk-table-card');
+      card.style.display = bulkFiles.length ? '' : 'none';
+      const tbody = document.getElementById('bulk-tbody');
+      tbody.innerHTML = '';
+      bulkFiles.forEach((entry, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+      <td style="color:var(--muted);font-size:11px">${i + 1}</td>
+      <td style="font-size:12px;font-family:monospace;color:#93c5fd;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${entry.file.name}">${entry.file.name}</td>
+      <td><input type="text" placeholder="e.g. DY365" value="${entry.channel}" data-i="${i}" data-f="channel" onchange="updateBulk(this)"/></td>
+      <td><input type="date" value="${entry.date}" data-i="${i}" data-f="date" onchange="updateBulk(this)"/></td>
+      <td style="text-align:center"><span class="status-dot ${entry.channel && entry.date ? 'ready' : 'pending'}"></span></td>
+      <td><button class="file-remove" onclick="removeBulk(${i})" title="Remove">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button></td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateBulk(el) {
+      const i = parseInt(el.dataset.i);
+      bulkFiles[i][el.dataset.f] = el.value;
+      renderBulkTable();
+    }
+
+    function removeBulk(i) {
+      bulkFiles.splice(i, 1);
+      renderBulkTable();
+    }
+
+    // ── Preview ───────────────────────────────────────────────────────────────────
+    // Preview functions removed as filename logic is handled by backend.
+
+    // ── Logging ───────────────────────────────────────────────────────────────────
+    function logLine(msg, type = 'info') {
+      const panel = document.getElementById('log-panel');
+      panel.classList.add('visible');
+      const now = new Date();
+      const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+      const div = document.createElement('div');
+      div.className = 'log-line';
+      div.innerHTML = `<span class="log-time">${time}</span><span class="log-msg ${type}">${msg}</span>`;
+      panel.appendChild(div);
+      panel.scrollTop = panel.scrollHeight;
+    }
+
+    function setProgress(pct, text) {
+      document.getElementById('progress-wrap').classList.add('visible');
+      document.getElementById('progress-fill').style.width = pct + '%';
+      document.getElementById('progress-pct').textContent = Math.round(pct) + '%';
+      document.getElementById('progress-text').textContent = text;
+    }
+
+    // ── CORE: Read Excel and run comparison ───────────────────────────────────────
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    async function readExcelFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          try {
+            const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const arr = XLSX.utils.sheet_to_json(ws, { defval: '' });
+            resolve(arr);
+          } catch (err) { reject(err); }
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    // ── Main analysis logic (mirrors Python logic) ────────────────────────────────
+
+    function safeStr(val) {
+      if (val === null || val === undefined) return '';
+      const s = String(val).trim();
+      return ['nan', 'none', 'nat', ''].includes(s.toLowerCase()) ? '' : s;
+    }
+
+    function hmsToSecs(val) {
+      if (val instanceof Date) {
+        return val.getHours() * 3600 + val.getMinutes() * 60 + val.getSeconds();
+      }
+      const s = safeStr(val);
+      if (!s) return 0;
+      const m = s.match(/^(\d+):(\d{2}):(\d{2})$/);
+      if (m) return parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseInt(m[3]);
+      const f = parseFloat(s);
+      if (!isNaN(f)) {
+        // Excel time fraction
+        if (f >= 0 && f < 1) return Math.round(f * 86400);
+        return Math.round(f);
+      }
+      return 0;
+    }
+
+    function fmtHms(secs) {
+      secs = Math.abs(Math.round(secs));
+      const h = Math.floor(secs / 3600), r = secs % 3600;
+      const mm = Math.floor(r / 60), ss = r % 60;
+      return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+    }
+
+    function normaliseType(val) {
+      const v = safeStr(val).toUpperCase().trim();
+      return v === 'STORY BLOCK' ? 'PROGRAM' : v;
+    }
+
+    function normaliseForMatch(s) {
+      return s.toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+    }
+
+    function seqRatio(a, b) {
+      // Simplified sequence matcher ratio
+      if (!a || !b) return 0;
+      const longer = a.length > b.length ? a : b;
+      const shorter = a.length > b.length ? b : a;
+      if (longer.length === 0) return 1;
+      const dist = editDistance(longer, shorter);
+      return (longer.length - dist) / longer.length;
+    }
+
+    function editDistance(a, b) {
+      const m = a.length, n = b.length;
+      const dp = Array.from({ length: m + 1 }, (_, i) => Array.from({ length: n + 1 }, (_, j) => i || j));
+      for (let i = 1; i <= m; i++)
+        for (let j = 1; j <= n; j++)
+          dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+      return dp[m][n];
+    }
+
+    function smartMatch(brand, nctVal) {
+      const a = normaliseForMatch(brand);
+      const b = normaliseForMatch(nctVal);
+      if (!a || !b) return 0;
+      const words = a.split(/\s+/);
+      const pattern = new RegExp('\\b' + words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+') + '\\b');
+      if (pattern.test(b)) return 1.0;
+      const sig = words.filter(w => w.length > 2);
+      if (sig.length && new RegExp('\\b' + sig[0] + '\\b').test(b)) return 0.85;
+      return seqRatio(a, b);
+    }
+
+    function parseSponsorBrands(raw) {
+      if (!raw) return [];
+      const out = [];
+      for (const entry of raw.split(',')) {
+        const e = entry.trim().replace(/^\[|\]$/g, '');
+        if (!e) continue;
+        const parts = e.split('|');
+        if (parts.length < 2) continue;
+        const brand = parts[0].trim();
+        if (brand) out.push({ brand, secs: hmsToSecs(parts[1].trim()) });
+      }
+      return out;
+    }
+
+    function findBrandInNct(brand, nctRows, threshold) {
+      let bestScore = 0, bestIdx = null, bestField = null;
+      for (let i = 0; i < nctRows.length; i++) {
+        const row = nctRows[i];
+        for (const field of ['NCT brand', 'NCT story']) {
+          const val = safeStr(row[field]);
+          if (!val) continue;
+          const score = smartMatch(brand, val);
+          if (score > bestScore) { bestScore = score; bestIdx = i; bestField = field; }
+        }
+      }
+      if (bestScore >= threshold) return { idx: bestIdx, score: bestScore, field: bestField };
+      return { idx: null, score: bestScore, field: null };
+    }
+
+    function compareRows(dfBarc, dfNct, threshold, tol) {
+      const barcDurPm = [];
+      const barcRemarks = [];
+      const psMatchedNct = new Set();
+      const nctPsLabel = {};
+      const psBrandNctMap = {};
+
+      const nctSS = dfNct.map(r => hmsToSecs(r['TelecastStartTime']));
+      const nctSE = dfNct.map(r => hmsToSecs(r['TelecastEndTime']));
+
+      for (let bi = 0; bi < dfBarc.length; bi++) {
+        const brow = dfBarc[bi];
+        const bStart = hmsToSecs(brow['TelecastStartTime']);
+        const bEnd = hmsToSecs(brow['TelecastEndTime']);
+        const bDur = hmsToSecs(brow['TelecastDuration']);
+        const bCtype = normaliseType(brow['BARC ContentType']);
+        const bTitle = safeStr(brow['BARC Title']);
+        const bSpName = safeStr(brow['BARC PromoSponsorName']);
+        const bIsPromo = bCtype === 'PROMO' && bTitle.toLowerCase().startsWith('sponsorship promo');
+
+        const win = dfNct.filter((_, i) => nctSS[i] >= bStart - tol && nctSS[i] < bEnd + tol);
+
+        if (win.length === 0) {
+          barcDurPm.push(null); barcRemarks.push('NO NCT ROW IN TIME WINDOW'); continue;
+        }
+
+        if (bIsPromo && bSpName) {
+          let anyMatched = false;
+          for (const { brand } of parseSponsorBrands(bSpName)) {
+            const { idx, score } = findBrandInNct(brand, win, threshold);
+            if (idx !== null) {
+              anyMatched = true;
+              const realIdx = dfNct.indexOf(win[idx]);
+              psMatchedNct.add(realIdx);
+              nctPsLabel[realIdx] = brand;
+              if (!psBrandNctMap[brand]) psBrandNctMap[brand] = { count: 0, secs: 0 };
+              const nrow = win[idx];
+              psBrandNctMap[brand].count++;
+              psBrandNctMap[brand].secs += hmsToSecs(nrow['TelecastDuration'] || 0);
+            }
+          }
+          barcDurPm.push(null);
+          barcRemarks.push(anyMatched ? 'OK' : 'PS BRAND NOT FOUND IN NCT');
+          continue;
+        }
+
+        let matched = false;
+        let durDiff = null;
+        let remark = 'OK';
+
+        for (const nrow of win) {
+          const nType = normaliseType(nrow['NCT Program Type']);
+          const nBrand = safeStr(nrow['NCT brand']);
+          const nStory = safeStr(nrow['NCT story']);
+          const scoreB = nBrand ? smartMatch(bTitle, nBrand) : 0;
+          const scoreS = nStory ? smartMatch(bTitle, nStory) : 0;
+          if (Math.max(scoreB, scoreS) >= threshold) {
+            matched = true;
+            const nDur = hmsToSecs(nrow['TelecastDuration'] || 0);
+            durDiff = nDur - bDur;
+            if (bCtype !== nType) remark = `TYPE MISMATCH: BARC=${bCtype}, NCT=${nType}`;
+            else if (Math.abs(durDiff) > tol) remark = `DURATION DIFF: ${durDiff > 0 ? '+' : ''}${fmtHms(Math.abs(durDiff))}`;
+            break;
+          }
+        }
+
+        barcDurPm.push(durDiff);
+        barcRemarks.push(matched ? remark : 'BRAND NOT FOUND IN NCT');
+      }
+
+      return { barcDurPm, barcRemarks, psMatchedNct, nctPsLabel, psBrandNctMap };
+    }
+
+    // ── Build output xlsx ─────────────────────────────────────────────────────────
+
+    function buildOutputXlsx(df, dfBarc, dfNct, compareResult) {
+      const { barcDurPm, barcRemarks, psMatchedNct, nctPsLabel, psBrandNctMap } = compareResult;
+
+      const wb = XLSX.utils.book_new();
+
+      // COMPARISON sheet — original cols + remarks
+      const compRows = df.map((row, i) => {
+        const src = safeStr(row['source']).toUpperCase();
+        let remark = '', durPm = '';
+        if (src === 'BARC XML') {
+          const bi = dfBarc.indexOf(row);
+          if (bi >= 0) {
+            remark = barcRemarks[bi] || '';
+            const dp = barcDurPm[bi];
+            if (dp !== null && dp !== undefined) {
+              durPm = (dp >= 0 ? '+' : '−') + fmtHms(Math.abs(dp));
+            }
+          }
+        }
+        const ri = dfNct.indexOf(row);
+        const psLabel = ri >= 0 ? (nctPsLabel[ri] || '') : '';
+        return { ...row, 'NCT PromoSponsor': psLabel, 'Duration +-': durPm, 'Remarks': remark };
+      });
+
+      const wsComp = XLSX.utils.json_to_sheet(compRows);
+      XLSX.utils.book_append_sheet(wb, wsComp, 'COMPARISON');
+
+      // SUMMARY
+      const barcByType = groupBy(dfBarc, r => normaliseType(r['BARC ContentType']));
+      const nctByType = groupBy(dfNct, r => normaliseType(r['NCT Program Type']));
+      const types = [...new Set([...Object.keys(barcByType), ...Object.keys(nctByType)])];
+      const summRows = types.map(t => ({
+        'Content Type': t,
+        'BARC Count': (barcByType[t] || []).length,
+        'BARC Duration': fmtHms((barcByType[t] || []).reduce((a, r) => a + hmsToSecs(r['TelecastDuration']), 0)),
+        'NCT Count': (nctByType[t] || []).length,
+        'NCT Duration': fmtHms((nctByType[t] || []).reduce((a, r) => a + hmsToSecs(r['TelecastDuration']), 0)),
+      }));
+      const wsSumm = XLSX.utils.json_to_sheet(summRows);
+      XLSX.utils.book_append_sheet(wb, wsSumm, 'SUMMARY');
+
+      // COMMERCIAL COMPARISON
+      const barcComm = dfBarc.filter(r => normaliseType(r['BARC ContentType']) === 'COMMERCIAL');
+      const nctComm = dfNct.filter((r, i) => normaliseType(r['NCT Program Type']) === 'COMMERCIAL' && !psMatchedNct.has(i));
+      const barcBrands = [...new Set(barcComm.map(r => safeStr(r['BARC Title'])).filter(Boolean))];
+
+      const commRows = barcBrands.map(brand => {
+        const bRows = barcComm.filter(r => safeStr(r['BARC Title']) === brand);
+        const nRows = nctComm.filter(r => {
+          const s1 = smartMatch(brand, safeStr(r['NCT brand']));
+          const s2 = smartMatch(brand, safeStr(r['NCT story']));
+          return Math.max(s1, s2) >= 0.8;
+        });
+        const ps = psBrandNctMap[brand] || { count: 0, secs: 0 };
+        return {
+          'Brand': brand,
+          'BARC Count': bRows.length,
+          'BARC Duration': fmtHms(bRows.reduce((a, r) => a + hmsToSecs(r['TelecastDuration']), 0)),
+          'NCT Count': nRows.length,
+          'NCT Duration': fmtHms(nRows.reduce((a, r) => a + hmsToSecs(r['TelecastDuration']), 0)),
+          'NCT PS Count': ps.count,
+          'NCT PS Duration': fmtHms(ps.secs),
+          'Remarks': nRows.length === bRows.length ? 'MATCH' : nRows.length > bRows.length ? 'NCT MORE' : 'NCT LESS',
+        };
+      });
+
+      const wsComm = XLSX.utils.json_to_sheet(commRows);
+      XLSX.utils.book_append_sheet(wb, wsComm, 'COMMERCIAL COMPARISION');
+
+      // DETAILED ANALYSIS — mismatches only
+      const detailRows = [];
+      for (const brow of dfBarc) {
+        const bCtype = normaliseType(brow['BARC ContentType']);
+        if (!['COMMERCIAL', 'PROMO'].includes(bCtype)) continue;
+        const bStart = hmsToSecs(brow['TelecastStartTime']);
+        const bEnd = hmsToSecs(brow['TelecastEndTime']);
+        const bTitle = safeStr(brow['BARC Title']);
+        const isPromo = bCtype === 'PROMO' && bTitle.toLowerCase().startsWith('sponsorship promo');
+        const win = dfNct.filter(r => {
+          const ss = hmsToSecs(r['TelecastStartTime']);
+          return ss >= bStart - 1 && ss < bEnd + 1;
+        });
+        for (const nrow of win) {
+          const nBrand = safeStr(nrow['NCT brand']);
+          const nStory = safeStr(nrow['NCT story']);
+          const nName = nBrand || nStory;
+          const nType = normaliseType(nrow['NCT Program Type']);
+          const s1 = nBrand ? smartMatch(bTitle, nBrand) : 0;
+          const s2 = nStory ? smartMatch(bTitle, nStory) : 0;
+          if (Math.max(s1, s2) >= 0.8) continue;
+          detailRows.push({
+            'BARC Content Name': bTitle,
+            'BARC Content Type': bCtype,
+            'BARC Start': safeStr(brow['TelecastStartTime']),
+            'BARC End': safeStr(brow['TelecastEndTime']),
+            'NCT Content Name': nName,
+            'NCT Content Type': nType,
+            'NCT Start': safeStr(nrow['TelecastStartTime']),
+            'NCT End': safeStr(nrow['TelecastEndTime']),
+            'Remarks': `NCT is tagging (${nName}) instead of (${bTitle})`,
+          });
+        }
+      }
+
+      const wsDetail = XLSX.utils.json_to_sheet(detailRows.length ? detailRows : [{ 'Info': 'NO MISMATCHES FOUND' }]);
+      XLSX.utils.book_append_sheet(wb, wsDetail, 'DETAILED ANALYSIS');
+
+      return XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+    }
+
+    function groupBy(arr, fn) {
+      const m = {};
+      for (const r of arr) {
+        const k = fn(r);
+        if (!m[k]) m[k] = [];
+        m[k].push(r);
+      }
+      return m;
+    }
+
+    // ── Run ────────────────────────────────────────────────────────────────────────
+
+    async function runAnalysis() {
+      document.getElementById('log-panel').innerHTML = '';
+      document.getElementById('log-panel').classList.remove('visible');
+      document.getElementById('output-card').classList.remove('visible');
+      document.getElementById('progress-wrap').classList.remove('visible');
+
+      const btn = document.getElementById('run-btn');
+      btn.disabled = true;
+
+      try {
+        const formData = new FormData();
+        let isSingle = mode === 'single';
+        let fileCount = 0;
+
+        if (isSingle) {
+          if (!singleFile) { alert('Please upload a file first.'); btn.disabled = false; return; }
+          formData.append('files', singleFile);
+          fileCount = 1;
+
+          setProgress(20, 'Uploading file to server...');
+          logLine(`Uploading: ${singleFile.name}`, 'info');
+
+        } else {
+          if (!bulkFiles.length) { alert('Please upload at least one file.'); btn.disabled = false; return; }
+
+          for (const entry of bulkFiles) {
+            formData.append('files', entry.file);
+          }
+          fileCount = bulkFiles.length;
+
+          setProgress(20, `Uploading ${fileCount} files to server...`);
+          logLine(`Uploading ${fileCount} files...`, 'info');
+        }
+
+        setProgress(50, 'Processing data via Python...');
+        logLine('Python script is analyzing the data (this may take a moment)...', 'info');
+
+        const response = await fetch('/analyze', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          let errText = await response.text();
+          try { const j = JSON.parse(errText); errText = j.error || JSON.stringify(j); } catch (e) { }
+          throw new Error(`Server Error (${response.status}): ${errText}`);
+        }
+
+        setProgress(80, 'Downloading results...');
+        logLine('Receiving analyzed file...', 'info');
+
+        const blob = await response.blob();
+
+        // Read the exact filename returned by Python
+        const disposition = response.headers.get('Content-Disposition');
+        let filename = isSingle ? 'output.xlsx' : `barc_nct_batch_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.zip`;
+        if (disposition && disposition.indexOf('attachment') !== -1) {
+          const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+          if (matches != null && matches[1]) {
+            filename = matches[1].replace(/['"]/g, '');
+          }
+        }
+
+        setProgress(100, 'Done!');
+        logLine('Analysis complete!', 'ok');
+
+        // Trigger download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+
+        // Show output card
+        document.getElementById('output-sub').textContent = `Processed successfully via Python Backend.`;
+
+        const statsRow = document.getElementById('stats-row');
+        statsRow.innerHTML = `
+      <div class="stat-card"><div class="stat-num">${fileCount}</div><div class="stat-label">Files Processed</div></div>
+      <div class="stat-card" style="grid-column: span 2"><div class="stat-num" style="color:var(--success)">SUCCESS</div><div class="stat-label">Python Execution Complete</div></div>
+    `;
+
+        const dlList = document.getElementById('download-list');
+        dlList.innerHTML = '';
+
+        const dlItem = document.createElement('div');
+        dlItem.className = 'download-item';
+        dlItem.innerHTML = `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" style="flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12h6m-3-3v6"/></svg>
+      <span class="dl-name">${filename}</span>
+      <span class="dl-size">${fmtSize(blob.size)}</span>
+      <a href="${url}" download="${filename}" class="dl-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download File
+      </a>`;
+        dlList.appendChild(dlItem);
+
+        document.getElementById('output-card').classList.add('visible');
+
+      } catch (err) {
+        logLine('ERROR: ' + err.message, 'error');
+        console.error(err);
+        alert('An error occurred: ' + err.message);
+      }
+
+      btn.disabled = false;
+    }
+  </script>
+</body>
+
+</html>

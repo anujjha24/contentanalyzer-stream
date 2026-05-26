@@ -1,0 +1,16 @@
+# ── Streamlit + FastAPI backend ───────────────────────────────────────────────
+streamlit>=1.35.0
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+python-multipart>=0.0.9      # FastAPI file upload support
+
+# ── MongoDB ───────────────────────────────────────────────────────────────────
+pymongo[srv]>=4.7.0
+
+# ── Excel / data processing ───────────────────────────────────────────────────
+pandas>=2.2.0
+openpyxl>=3.1.0
+xlrd>=2.0.1
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+python-dotenv>=1.0.0
