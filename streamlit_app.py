@@ -466,6 +466,13 @@ def _prepare_html(api_base: str) -> str:
         f'src="{api_base}/static/app.js"',
     )
 
+    # Inject API base URL so app.js can resolve fetch() calls correctly
+    injection = f"""
+<script>
+  window.STREAMLIT_API_BASE = "{api_base}";
+</script>
+"""
+    html = html.replace("</head>", injection + "</head>", 1)
     return html
 
 
@@ -494,7 +501,7 @@ def main():
     # Start the FastAPI backend (idempotent)
     _start_api_server()
 
-    api_base = f"http://localhost:{API_PORT}"
+    api_base =""
     html_content = _prepare_html(api_base)
 
     components.html(
